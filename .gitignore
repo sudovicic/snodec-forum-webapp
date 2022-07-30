@@ -37,6 +37,9 @@ Thumbs.db
 /.qmake.cache
 /.qmake.stash
 
+# VS Code generated files
+.vscode
+
 # qtcreator generated files
 *.pro.user*
 

@@ -10,7 +10,6 @@
 #define PORT 1337
 
 int main(int argc, char *argv[]) {
-
     express::legacy::in::WebApp::init(argc, argv);
 
     database::mariadb::MariaDBConnectionDetails details = {
@@ -22,6 +21,8 @@ int main(int argc, char *argv[]) {
         .socket = "/run/mysqld/mysqld.sock",
         .flags = 0,
     };
+
+    database::mariadb::MariaDBClient db1(details);
 
     express::legacy::in::WebApp staticServer("ForumApp");
 
@@ -35,16 +36,26 @@ int main(int argc, char *argv[]) {
         }
     });
 
-    express::legacy::in::WebApp restAPI("Forum Rest API");
+//    express::legacy::in::WebApp restAPI("Forum Rest API");
 
-    restAPI.get(
-        "/api/subtopics",
-        [] APPLICATION(req, res) {
-            res.cookie("TestCookie", "CookieValue", {{"Max-Age", "3600"}});
+//    restAPI.get(
+//        "/api/subtopics",
+//        [&db1] APPLICATION(req, res) {
+//            res.cookie("TestCookie", "CookieValue", {{"Max-Age", "3600"}});
 
-            res.send();
-        }
-    );
+//            db1.query(
+//                "SELECT * FROM snodec",
+//                [](const MYSQL_ROW row) -> void {
+//                    if (row != nullptr) {
+
+//                    }
+//                },
+//                [](const std::string& errorString, unsigned int errorNumber) -> void {
+//                    VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+//                });
+//            //res.send();
+//        }
+//    );
 
     return express::WebApp::start();
 }

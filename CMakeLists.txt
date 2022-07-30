@@ -16,6 +16,7 @@ if(MARIADB_FOUND)
     )
 
     add_executable(forum-webapp main.cpp)
+
     target_link_libraries(forum-webapp PRIVATE snodec::express snodec::core-legacy snodec::net-in snodec::db-mariadb)
 
     target_include_directories(
@@ -24,6 +25,7 @@ if(MARIADB_FOUND)
                "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>"
                "$<INSTALL_INTERFACE:include/snode.c>"
     )
+
     install(TARGETS forum-webapp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 endif(MARIADB_FOUND)

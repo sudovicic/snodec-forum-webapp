@@ -1,0 +1,24 @@
+nav a.current {
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
+.button {
+    border: none;
+    border-radius: 5px;
+    background: var(--accent);
+    font-size: 1rem;
+    color: var(--bg);
+    padding: 0.7rem 0.9rem;
+    margin: 0.5rem 0;
+}
+
+.button:hover,
+.button:focus {
+    filter: brightness(1.4);
+    cursor: pointer;
+}
+
+.subtopic-item {
+    display: flex;
+}

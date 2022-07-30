@@ -1,11 +1,11 @@
-$(function () {
-    var navLinks = $('#navigation li');
+$(() => {
+    var navLinks = $('#navigation a');
   
-    $('#navigation a').on('click', function (e) {	
-      changeActive(navLinks.index(this));
+    navLinks.on('click', (e) => {
+      changeActive(navLinks.index(e.target));
     });
   
-    window.changeActive = function (index) {
-      navLinks.removeClass('active').eq(index).addClass('active');
+    window.changeActive = (index) => {
+      navLinks.removeClass('current').eq(index).addClass('current');
     }
   });

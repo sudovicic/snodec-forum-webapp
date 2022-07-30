@@ -1,27 +1,25 @@
 (() => {
-  // private api
-
+  // ------------ private api ------------
   var cache = {};
 
   function get(url, cb) {
     if (cache[url]) return cb(cache[url]);
     $.ajax({
       url: url,
-      success: function (data) {
+      success: (data) => {
         cache[url] = data;
         cb(data);
       },
-      error: function (jqXHR, textStatus, errorThrown) {
-        console.log(jqXHR, textStatus, errorThrown);
+      error: (jqXHR, textStatus, errorThrown) => {
+        console.error(jqXHR, textStatus, errorThrown);
       },
       dataType: 'text'
     });
   }
 
-  // public api
-
+  // ------------ public api ------------
   window.init = {
-    ctx: function (ctx, next) {
+    ctx: (ctx, next) => {
       ctx.data = {};
       ctx.partials = {};
       next();
@@ -29,10 +27,35 @@
   };
 
   window.route = {
-    home: function (ctx, next) {
-      get('views/home.html', function (html) {
-        ctx.data = window.apiService.getAllSubtopics();
+    home: (ctx, next) => {
+      get('/views/home.html', (html) => {
         ctx.data.index = 0;
+        get('/views/partials/subtopics.html', (subtopicsPartial) => {
+          ctx.partials.content = html + Hogan.compile(subtopicsPartial).render(ctx.data, ctx.partials);
+          next();
+        })
+      });
+    },
+
+    newSubtopic: (ctx, next) => {
+      get('/views/newSubtopicForm.html', (html) => {
+        ctx.data.index = 1;
+        ctx.partials.content = html;
+        next();
+      });
+    },
+
+    login: (ctx, next) => {
+      get('/views/loginForm.html', (html) => {
+        ctx.data.index = 2;
+        ctx.partials.content = html;
+        next();
+      });
+    },
+
+    register: (ctx, next) => {
+      get('/views/registerForm.html', (html) => {
+        ctx.data.index = 3;
         ctx.partials.content = html;
         next();
       });
@@ -40,10 +63,9 @@
   };
 
   window.render = {
-    content: function (ctx, next) {
-      get('views/content.html', function (html) {
-        var template = Hogan.compile(html),
-          content = template.render(ctx.data, ctx.partials);
+    content: (ctx, next) => {
+      get('views/partials/content.html', (html) => {
+        const content = Hogan.compile(html).render(ctx.data, ctx.partials);
 
         $('#content').empty().append(content);
         changeActive(ctx.data.index);
@@ -53,4 +75,4 @@
   };
 
   window.done = null;
-}());
+})();
