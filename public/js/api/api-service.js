@@ -4,7 +4,7 @@
   window.apiService = {
     getAllSubtopics: () => {
       $.ajax({
-         url: `${API_URL}/users`
+         url: `${API_URL}/subtopics`
       }).then((data) => {              console.log(
                      data)
                   return data });

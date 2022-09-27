@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
                       });
 
     staticServer.get("/subtopics", [&mariaDbClient] APPLICATION(req, res) {
-                         std::cout << "Cookie-Value of \"SessionCookie\": "<< req.cookie("sessionCookie")<<std::endl;
                          nlohmann::json* subTopicsJson = new nlohmann::json;
                          mariaDbClient.query(
                          "SELECT * FROM subtopics",
@@ -124,6 +123,35 @@ int main(int argc, char *argv[]) {
                          });
 
                      });
+
+    staticServer.post("/subtopics/new", [&mariaDbClient] APPLICATION(req, res) {
+
+                          req.body.push_back(0);
+                          std::cout << req.body.data() << std::endl;
+                          std::cout << Utils::GetFieldByName(req.body.data(), "title") << std::endl;
+
+                          mariaDbClient.exec(
+                          "INSERT INTO `subtopics`(`title`, `userid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','1')",
+                          [&mariaDbClient, &res](void) -> void {
+                              VLOG(0) << "********** OnQuery 1: ";
+                              mariaDbClient.affectedRows(
+                              [&res](my_ulonglong affectedRows) -> void {
+                                  VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                  res.sendStatus(200);
+                              },
+                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                  VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                  res.sendStatus(500);
+
+                              });
+                          },
+                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                              res.sendStatus(500);
+                          });
+
+
+                      });
 
 
     staticServer.use(express::middleware::StaticMiddleware(SERVERROOT));
