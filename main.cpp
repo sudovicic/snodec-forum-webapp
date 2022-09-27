@@ -393,7 +393,7 @@ int main(int argc, char *argv[]) {
 
                       });
 
-    staticServer.post("/logout", [&mariaDbClient] APPLICATION(req, res) {
+    staticServer.get("/logout", [&mariaDbClient] APPLICATION(req, res) {
                           std::string sessionCookie = req.cookie("sessionCookie");
                           if(sessionCookie.empty()){
                               res.sendStatus(500);
