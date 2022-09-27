@@ -407,6 +407,16 @@ int main(int argc, char *argv[]) {
                           }
                       });
 
+    staticServer.use([] APPLICATION(req, res) {
+                         // Adjust this path according to your project directory tree
+                         res.sendFile("/home/student/snodec-forum-webapp/public/index.html", [](int err) {
+                             if (err != 0) {
+                                 PLOG(FATAL) << "Error:" << err;
+                             } else {
+                                 VLOG(0) << "Error: " << err;
+                             }
+                         });
+                     });
 
     staticServer.use(express::middleware::StaticMiddleware(SERVERROOT));
 
