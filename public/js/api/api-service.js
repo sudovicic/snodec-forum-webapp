@@ -1,11 +1,13 @@
 (() => {
-  const API_URL = 'localhost:1337';
+  const API_URL = 'http://localhost:8080';
 
   window.apiService = {
     getAllSubtopics: () => {
-      // $.ajax({
-      //   url: `${API_URL}/subtopics`
-      // }).then((data) => { return data });
+      $.ajax({
+         url: `${API_URL}/users`
+      }).then((data) => {              console.log(
+                     data)
+                  return data });
       return new Promise(
         (resolve) => setTimeout(
           () => resolve({ 'subtopics': [{'id': 0, 'name': 'subtopic 1'}, {'id': 1, name: 'subtopic 2'}, {'id': 2, name: 'subtopic 3'}]}),
