@@ -45,8 +45,6 @@ int main(int argc, char *argv[]) {
     staticServer.post("/register", [&mariaDbClient] APPLICATION(req, res) {
                           req.body.push_back(0);
                           std::cout << req.body.data() << std::endl;
-                          std::cout << Utils::GetFieldByName(req.body.data(), "username") << std::endl;
-                          std::cout << Utils::GetFieldByName(req.body.data(), "password") << std::endl;
 
                           mariaDbClient.exec(
                           "INSERT INTO `users`(`username`, `password`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "username") + "','" + Utils::GetFieldByName(req.body.data(), "password") + "')",
@@ -85,7 +83,7 @@ int main(int argc, char *argv[]) {
 
                               } else {
                                   if(!usersJson->is_null()){
-                                      res.cookie("sessionCookie", Utils::Gen_random(16), {{"Max-Age", "60"}} );
+                                      res.cookie("sessionCookie", Utils::Gen_random(16), {{"Max-Age", "1"}} );
                                       res.send(usersJson->dump());
 
                                   } else {
@@ -128,7 +126,6 @@ int main(int argc, char *argv[]) {
 
                           req.body.push_back(0);
                           std::cout << req.body.data() << std::endl;
-                          std::cout << Utils::GetFieldByName(req.body.data(), "title") << std::endl;
 
                           mariaDbClient.exec(
                           "INSERT INTO `subtopics`(`title`, `userid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','1')",
@@ -153,6 +150,108 @@ int main(int argc, char *argv[]) {
 
                       });
 
+
+    staticServer.get("/subtopic/:subtopicid/threads", [&mariaDbClient] APPLICATION(req, res) {
+
+                          nlohmann::json* threadsJson = new nlohmann::json;
+                          mariaDbClient.query(
+                          "SELECT * FROM threads WHERE subtopicid = '" + req.params["subtopicid"] + "';",
+                          [&res, threadsJson](const MYSQL_ROW row) -> void {
+                              if (row != nullptr) {
+                                  threadsJson->push_back({{"thread_id", row[0]},{"title", row[1]}, {"content", row[2]}, {"created_at", row[3]}, {"userid", row[4]}, {"subtopicid", row[5]}});
+                                  VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
+
+                              } else {
+                                  VLOG(0) << "Row Result 3: " << threadsJson->dump();
+                                  res.send(threadsJson->dump());
+                                  delete threadsJson;
+                              }
+                          },
+                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                              res.sendStatus(500);
+                          });
+
+                      });
+
+    staticServer.post("/subtopic/:subtopicid/threads/new", [&mariaDbClient] APPLICATION(req, res) {
+
+                          req.body.push_back(0);
+                          std::cout << req.body.data() << std::endl;
+
+                          mariaDbClient.exec(
+                          "INSERT INTO `threads`(`title`, `content`,`userid`, `subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','" + Utils::GetFieldByName(req.body.data(), "content") + "','1','" + req.params["subtopcid"] + "');",
+                          [&mariaDbClient, &res](void) -> void {
+                              VLOG(0) << "********** OnQuery 1: ";
+                              mariaDbClient.affectedRows(
+                              [&res](my_ulonglong affectedRows) -> void {
+                                  VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                  res.sendStatus(200);
+                              },
+                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                  VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                  res.sendStatus(500);
+
+                              });
+                          },
+                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                              res.sendStatus(500);
+                          });
+
+
+                      });
+
+    staticServer.get("/subtopic/:subtopicid/threads/:threadid/posts", [&mariaDbClient] APPLICATION(req, res) {
+
+                          nlohmann::json* postsJson = new nlohmann::json;
+                          mariaDbClient.query(
+                          "SELECT * FROM posts WHERE threadid = '" + req.params["threadid"] + "';",
+                          [&res, postsJson](const MYSQL_ROW row) -> void {
+                              if (row != nullptr) {
+                                  postsJson->push_back({{"post_id", row[0]}, {"content", row[1]}, {"created_at", row[2]}, {"userid", row[3]}, {"threadid", row[4]}});
+                                  VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
+
+                              } else {
+                                  VLOG(0) << "Row Result 3: " << postsJson->dump();
+                                  res.send(postsJson->dump());
+                                  delete postsJson;
+                              }
+                          },
+                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                              res.sendStatus(500);
+                          });
+
+                      });
+
+    staticServer.post("/subtopic/:subtopicid/threads/:threadid/posts/new", [&mariaDbClient] APPLICATION(req, res) {
+
+                          req.body.push_back(0);
+                          std::cout << req.body.data() << std::endl;
+
+                          mariaDbClient.exec(
+                          "INSERT INTO `posts`(`content`,`userid`,`subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "content") + "','1','" + req.params["threadid"] + "');",
+                          [&mariaDbClient, &res](void) -> void {
+                              VLOG(0) << "********** OnQuery 1: ";
+                              mariaDbClient.affectedRows(
+                              [&res](my_ulonglong affectedRows) -> void {
+                                  VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                  res.sendStatus(200);
+                              },
+                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                  VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                  res.sendStatus(500);
+
+                              });
+                          },
+                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                              res.sendStatus(500);
+                          });
+
+
+                      });
 
     staticServer.use(express::middleware::StaticMiddleware(SERVERROOT));
 
