@@ -9,6 +9,6 @@ find_package(
         snodec COMPONENTS http-server-express db-mariadb core-socket-stream-legacy net-in-stream-legacy
 )
 
-add_executable(main main.cpp utils.cpp utils.h)
+add_executable(main main.cpp utils.cpp utils.h dbsetup.cpp dbsetup.h)
 
 target_link_libraries(main PRIVATE snodec::http-server-express snodec::db-mariadb snodec::core-socket-stream-legacy snodec::net-in-stream-legacy)

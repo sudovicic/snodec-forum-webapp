@@ -7,6 +7,7 @@
 #include "database/mariadb/MariaDBCommandSequence.h"
 #include <nlohmann/json.hpp>
 #include "utils.h"
+#include "dbsetup.h"
 
 #define SERVERROOT "/home/student/snodec-forum-webapp/public"
 #define PORT 1337
@@ -14,70 +15,30 @@
 int main(int argc, char *argv[]) {
     express::legacy::in::WebApp::init(argc, argv);
 
-    const database::mariadb::MariaDBConnectionDetails details = {
-        "localhost",
-        "snodec",
-        "password",
-        "WebForumDB",
-        3307,
-        "/var/run/mysqld/mysqld.sock",
-        0,
-    };
-
-    database::mariadb::MariaDBClient mariaDbClient(details);
-
-    std::string sqlString = "Select * from User;";
-
-    mariaDbClient.query(sqlString, [&](const MYSQL_ROW &rows) {
-           if (rows != nullptr) {
-               for (int i = 0; rows[i + 1]; ++i) {
-                   std::cout << rows[i] << std::endl;
-
-               }
-           }
-
-       }, [](const std::string &, int) {
-       })
-
-    .exec(
-                    "CREATE TABLE IF NOT EXISTS `users` (username varchar(255), password varchar(255))",
-                    [&mariaDbClient](void) -> void {
-            VLOG(0) << "**** OnQuery 0;";
-            mariaDbClient.affectedRows(
-                        [](my_ulonglong affectedRows) -> void {
-                VLOG(0) << "**** AffectedRows 1: " << affectedRows;
-            },
-            [](const std::string& errorString, unsigned int errorNumber) -> void {
-                VLOG(0) << "Error 1: " << errorString << " : " << errorNumber;
-            });
-        },
-        [](const std::string& errorString, unsigned int errorNumber) -> void {
-            VLOG(0) << "**** Error 0: " << errorString << " : " << errorNumber;
-        });
-
+    database::mariadb::MariaDBClient mariaDbClient = DBSetup::InitDB();
 
     express::legacy::in::WebApp staticServer("ForumApp");
 
-
     staticServer.get("/users", [&mariaDbClient] APPLICATION(req, res) {
-                        nlohmann::json* usersJson = new nlohmann::json;
+                         std::cout << "Cookie-Value of \"SessionCookie\": "<< req.cookie("sessionCookie")<<std::endl;
+                         nlohmann::json* usersJson = new nlohmann::json;
                          mariaDbClient.query(
-                             "SELECT * FROM users",
-                             [&res, usersJson](const MYSQL_ROW row) -> void {
-                                 if (row != nullptr) {
-                                 usersJson->push_back({{"username", row[0]}, {"password", row[1]}});
+                         "SELECT user_id, username, password FROM users",
+                         [&res, usersJson](const MYSQL_ROW row) -> void {
+                             if (row != nullptr) {
+                                 usersJson->push_back({{"user_id", row[0]},{"username", row[1]}, {"password", row[2]}});
                                  VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
 
-                                 } else {
-                                        VLOG(0) << "Row Result 3: " << usersJson->dump();
-                                       res.send(usersJson->dump());
-                                       delete usersJson;
-                                 }
-                             },
-                             [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                 VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                             } else {
+                                 VLOG(0) << "Row Result 3: " << usersJson->dump();
+                                 res.send(usersJson->dump());
+                                 delete usersJson;
+                             }
+                         },
+                         [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                             VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                              res.sendStatus(500);
-                             });
+                         });
 
                      });
 
@@ -88,25 +49,25 @@ int main(int argc, char *argv[]) {
                           std::cout << Utils::GetFieldByName(req.body.data(), "password") << std::endl;
 
                           mariaDbClient.exec(
-                              "INSERT INTO `users`(`username`, `password`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "username") + "','" + Utils::GetFieldByName(req.body.data(), "password") + "')",
-                              [&mariaDbClient, &res](void) -> void {
-                                  VLOG(0) << "********** OnQuery 1: ";
-                                  mariaDbClient.affectedRows(
-                                      [&res](my_ulonglong affectedRows) -> void {
-                                          VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                           res.cookie("sessionCookie", Utils::Gen_random(16), {{"Max-Age", "60"}} );
-                                           res.sendStatus(200);
-                                      },
-                                      [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                          VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
-                                          res.sendStatus(500);
-
-                                      });
+                          "INSERT INTO `users`(`username`, `password`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "username") + "','" + Utils::GetFieldByName(req.body.data(), "password") + "')",
+                          [&mariaDbClient, &res](void) -> void {
+                              VLOG(0) << "********** OnQuery 1: ";
+                              mariaDbClient.affectedRows(
+                              [&res](my_ulonglong affectedRows) -> void {
+                                  VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                  res.cookie("sessionCookie", Utils::Gen_random(16), {{"Max-Age", "60"}} );
+                                  res.sendStatus(200);
                               },
                               [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                  VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
-                                    res.sendStatus(500);
+                                  VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                  res.sendStatus(500);
+
                               });
+                          },
+                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                              res.sendStatus(500);
+                          });
 
 
                       });
@@ -117,23 +78,52 @@ int main(int argc, char *argv[]) {
 
                           nlohmann::json* usersJson = new nlohmann::json;
                           mariaDbClient.query(
-                              "SELECT * FROM users WHERE username = '" + Utils::GetFieldByName(req.body.data(), "username") + "'AND password='" + Utils::GetFieldByName(req.body.data(), "password") + "';",
-                              [&res, usersJson](const MYSQL_ROW row) -> void {
-                                  if (row != nullptr) {
-                                    usersJson->push_back({{"username", row[0]}, {"password", row[1]}});
+                          "SELECT * FROM users WHERE username = '" + Utils::GetFieldByName(req.body.data(), "username") + "'AND password='" + Utils::GetFieldByName(req.body.data(), "password") + "';",
+                          [&res, usersJson](const MYSQL_ROW row) -> void {
+                              if (row != nullptr) {
+                                  usersJson->push_back({{"user_id", row[0]}, {"username", row[1]}});
+
+                              } else {
+                                  if(!usersJson->is_null()){
+                                      res.cookie("sessionCookie", Utils::Gen_random(16), {{"Max-Age", "60"}} );
+                                      res.send(usersJson->dump());
 
                                   } else {
-                                    res.cookie("sessionCookie", Utils::Gen_random(16), {{"Max-Age", "60"}} );
-                                    res.send(usersJson->dump());
-                                    delete usersJson;
+                                     res.send("No valid User found with this credentials!");
                                   }
-                              },
-                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                  VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                                  delete usersJson;
+
+                              }
+                          },
+                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                               res.sendStatus(500);
-                              });
+                          });
 
                       });
+
+    staticServer.get("/subtopics", [&mariaDbClient] APPLICATION(req, res) {
+                         std::cout << "Cookie-Value of \"SessionCookie\": "<< req.cookie("sessionCookie")<<std::endl;
+                         nlohmann::json* subTopicsJson = new nlohmann::json;
+                         mariaDbClient.query(
+                         "SELECT * FROM subtopics",
+                         [&res, subTopicsJson](const MYSQL_ROW row) -> void {
+                             if (row != nullptr) {
+                                 subTopicsJson->push_back({{"subtopic_id", row[0]},{"title", row[1]}, {"created_at", row[2]}, {"userid", row[3]}});
+                                 VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
+
+                             } else {
+                                 VLOG(0) << "Row Result 3: " << subTopicsJson->dump();
+                                 res.send(subTopicsJson->dump());
+                                 delete subTopicsJson;
+                             }
+                         },
+                         [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                             VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                             res.sendStatus(500);
+                         });
+
+                     });
 
 
     staticServer.use(express::middleware::StaticMiddleware(SERVERROOT));
@@ -145,25 +135,6 @@ int main(int argc, char *argv[]) {
             std::cout << "ForumApp is listening on " << socketAddress.toString() << std::endl;
         }
     });
-
-//    restAPI.get(
-//        "/api/subtopics",
-//        [&db1] APPLICATION(req, res) {
-//            res.cookie("TestCookie", "CookieValue", {{"Max-Age", "3600"}});
-
-//            db1.query(
-//                "SELECT * FROM snodec",
-//                [](const MYSQL_ROW row) -> void {
-//                    if (row != nullptr) {
-
-//                    }
-//                },
-//                [](const std::string& errorString, unsigned int errorNumber) -> void {
-//                    VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
-//                });
-//            //res.send();
-//        }
-//    );
 
     return express::WebApp::start();
 }
