@@ -83,7 +83,7 @@ database::mariadb::MariaDBClient DBSetup::InitDB(){
     });
 
     mariaDbClient.exec(
-                "CREATE TABLE IF NOT EXISTS `sessions` (session_id varchar(255), userid int(11), created_at timestamp default current_timestamp, primary key(userid), foreign key(userid) references users(user_id));",
+                "CREATE TABLE IF NOT EXISTS `sessions` (session_id varchar(255), userid int(11), created_at timestamp default current_timestamp, primary key(session_id), foreign key(userid) references users(user_id));",
                 [&mariaDbClient](void) -> void {
         VLOG(0) << "**** OnQuery 0;";
         mariaDbClient.affectedRows(
