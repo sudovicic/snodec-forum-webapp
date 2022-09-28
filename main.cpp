@@ -198,9 +198,9 @@ int main(int argc, char *argv[]) {
                           if(sessionCookie.empty()){
                               res.sendStatus(500);
                           } else {
-                              std::string userid = getUserIdFromSession(mariaDbClient, sessionCookie);
+                              //std::string userid = getUserIdFromSession(mariaDbClient, sessionCookie);
 
-                              std::cout << userid << std::endl;
+                              //std::cout << userid << std::endl;
                               req.body.push_back(0);
                               std::cout << req.body.data() << std::endl;
                               std::cout << Utils::GetFieldByName(req.body.data(), "title") << std::endl;
