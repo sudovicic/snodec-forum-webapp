@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
                              if (row != nullptr) {
                                  postsJson->push_back({{"post_id", row[0]}, {"content", row[1]}, {"created_at", row[2]}, {"userid", row[3]}, {"threadid", row[4]}, {"username", row[5]}});
                              } else {
-                                 VLOG(0) << "Row Result 3: " << postsJson->dump();
+                                 VLOG(0) << "Posts Json: " << postsJson->dump();
                                  res.send(postsJson->dump());
                                  delete postsJson;
                              }
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
 
                       });
 
-    staticServer.get("/logout", [&mariaDbClient] APPLICATION(req, res) {
+    staticServer.post("/logout", [&mariaDbClient] APPLICATION(req, res) {
                           std::string sessionCookie = req.cookie("sessionCookie");
                           if(sessionCookie.empty()){
                               res.sendStatus(500);
