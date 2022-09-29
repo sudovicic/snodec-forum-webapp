@@ -1,4 +1,10 @@
-<form method="post">
+<script>
+    $('#newPostForm').ajaxForm(() => {
+        page.redirect('/subtopic/{{subtopicId}}/thread/{{threadId}}');
+    });
+</script>
+
+<form id="newPostForm" method="post">
     <label for="content"><b>content</b></label>
     <input type="text" placeholder="content" name="content" required>
 

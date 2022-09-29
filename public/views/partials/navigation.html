@@ -1,0 +1,10 @@
+<nav id="navigation">
+    <a id="home" href="/home">home</a>
+    {{#session}}
+        <a id="newSubtopic" href="/subtopics/new">new subtopic</a>
+    {{/session}}
+    {{^session}}
+        <a id="login" href="/login">login</a>
+        <a id="register" href="/register">register</a>
+    {{/session}}
+</nav>

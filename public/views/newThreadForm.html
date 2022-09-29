@@ -1,4 +1,10 @@
-<form method="post">
+<script>
+    $('#newThreadForm').ajaxForm(() => {
+        page.redirect('/subtopic/{{subtopicId}}');
+    });
+</script>
+
+<form id="newThreadForm" method="post">
     <label for="title"><b>title</b></label>
     <input type="text" placeholder="title" name="title" required>
 

@@ -1,4 +1,10 @@
-<form method="post">
+<script>
+    $('#newSubtopicForm').ajaxForm(() => {
+        page.redirect('/home');
+    });
+</script>
+
+<form id="newSubtopicForm" method="post">
     <label for="title"><b>title</b></label>
     <input type="text" placeholder="title" name="title" required>
 

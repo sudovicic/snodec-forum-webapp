@@ -7,14 +7,13 @@ page('/home', middleware.loadSubtopics, route.home);
 page('/subtopic/:subtopicId', middleware.loadThreads, route.showSubtopic);
 page('/subtopics/new', route.newSubtopic);
 page('/subtopic/:subtopicId/thread/:threadId', middleware.loadThreads, middleware.loadPosts, route.showThread);
-page('/subtopic/:id/threads/new', route.newThread);
-// TODO implement
-page('/subtopic/:subtopicId/threads/:threadId/posts/new', route.newPost);
+page('/subtopic/:subtopicId/threads/new', route.newThread);
+page('/subtopic/:subtopicId/threads/:threadId/posts/new', middleware.loadThreads, middleware.loadPosts, route.newPost);
 
 page('/login', route.login);
 page('/logout', middleware.logout, () => page.redirect('/home'));
 page('/register', route.register);
 
-page('/*', render.loginStatus, render.content);
+page('/*', render.header, init.navLinks, render.content);
 
 page.start();

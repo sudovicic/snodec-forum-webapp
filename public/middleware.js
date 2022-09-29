@@ -1,11 +1,12 @@
 window.middleware = {
     // TODO: redirect to /login for certain routes if no session exists?
-    checkAuth: async (ctx, next) => {
+    checkAuth: (ctx, next) => {
         ctx.data.session = $.cookie("sessionCookie") ? true : false;
         next();
     },
 
     logout: async (ctx, next) => {
+        await window.apiService.logout();
         ctx.data.session = null;
         $.removeCookie("sessionCookie");
         next();
@@ -46,6 +47,7 @@ window.middleware = {
             ctx.save();
         } else {
             ctx.data.threads = ctx.state.threads;
+            ctx.data.thread = ctx.state.thread;
             ctx.data.subtopicId = ctx.state.subtopicId;
         }
         next();
@@ -53,7 +55,7 @@ window.middleware = {
 
     loadPosts: async (ctx, next) => {
         if (!ctx.state.posts) {
-            const { posts } = await window.apiService.getAllPostsOfThread(ctx.params.subtopicId, ctx.params.threadId);
+            const posts = await window.apiService.getAllPostsOfThread(ctx.params.subtopicId, ctx.params.threadId);
             ctx.state.posts = posts;
             ctx.data.posts = posts;
             ctx.state.subtopicId = ctx.params.subtopicId;
