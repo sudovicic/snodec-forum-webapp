@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
                                                           mariaDbClient.affectedRows(
                                                           [&res, sessionCookie, userId](my_ulonglong affectedRows) -> void {
                                                               VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                                              res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "360"}} );
+                                                              res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "3600"}} );
                                                               res.sendStatus(200);
                                                               delete userId;
                                                           },
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
                                           mariaDbClient.affectedRows(
                                           [&res, sessionCookie, userId, usersJson](my_ulonglong affectedRows) -> void {
                                               VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                              res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "60"}} );
+                                              res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "3600"}} );
                                               res.send(usersJson->dump());
                                               delete usersJson;
                                               delete userId;
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
                                       std::cout << req.body.data() << std::endl;
 
                                       mariaDbClient.exec(
-                                      "INSERT INTO `posts`(`content`,`userid`,`subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "content") + "','" + *userId + "','" + req.params["threadid"] + "');",
+                                      "INSERT INTO `posts`(`content`,`userid`,`threadid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "content") + "','" + *userId + "','" + req.params["threadid"] + "');",
                                       [&mariaDbClient, &res, userId](void) -> void {
                                           VLOG(0) << "********** OnQuery 1: ";
                                           mariaDbClient.affectedRows(
