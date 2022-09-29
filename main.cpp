@@ -14,10 +14,6 @@
 #define SERVERROOT "/home/student/snodec-forum-webapp/public"
 #define PORT 1337
 
-std::string getUserIdFromSession(database::mariadb::MariaDBClient &mariaDbClient, std::string sessionID);
-bool checkUserName(database::mariadb::MariaDBClient &mariaDbClient, std::string username);
-std::string getUsernameById(database::mariadb::MariaDBClient &mariaDbClient, std::string userId);
-
 int main(int argc, char *argv[]) {
     express::legacy::in::WebApp::init(argc, argv);
 
@@ -56,102 +52,65 @@ int main(int argc, char *argv[]) {
                           std::cout << Utils::GetFieldByName(req.body.data(), "password") << std::endl;
                           std::size_t password = std::hash<std::string>{}(Utils::GetFieldByName(req.body.data(), "password"));
 
-
-                          if(checkUserName(mariaDbClient, Utils::GetFieldByName(req.body.data(), "username"))){
-                              res.send("Username already in use");
-                          } else {
-                              mariaDbClient.exec(
-                              "INSERT INTO `users`(`username`, `password`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "username") + "','" + std::to_string(password) + "');",
-                              [&mariaDbClient, &res, &req](void) -> void {
-                                  VLOG(0) << "********** OnQuery 1: ";
-                                  mariaDbClient.affectedRows(
-                                  [&res, &mariaDbClient, &req](my_ulonglong affectedRows) -> void {
-                                      VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                      std::string sessionCookie = Utils::Gen_random(16);
-                                      res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "60"}} );
-                                      nlohmann::json* usersJson = new nlohmann::json;
-                                      mariaDbClient.query(
-                                      "SELECT user_id FROM users WHERE username = '" + Utils::GetFieldByName(req.body.data(), "username") + "';",
-                                      [&res, &mariaDbClient, sessionCookie, usersJson](const MYSQL_ROW row) -> void {
-                                          std::string userId;
-                                          if (row != nullptr) {
-                                              usersJson->push_back(row[0]);
-
-                                              VLOG(0) << "Row Result 3: " << usersJson->dump();
-                                          } else {
-                                              VLOG(0) << "UserId: " << usersJson->at(0);
-                                               userId = usersJson->at(0);
-                                              VLOG(0) << "User ID: " << userId;
-                                              delete usersJson;
-                                              mariaDbClient.exec(
-                                              "INSERT INTO `sessions`(`session_id`, `userid`) VALUES ('" + sessionCookie + "','" + userId + "')",
-                                              [&mariaDbClient, &res](void) -> void {
-                                                  VLOG(0) << "********** OnQuery 1: ";
-                                                  mariaDbClient.affectedRows(
-                                                  [&res](my_ulonglong affectedRows) -> void {
-                                                      VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                                      res.sendStatus(200);
-                                                  },
-                                                  [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                                      VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
-                                                      res.sendStatus(500);
-                                                  });
-                                              },
-                                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                                  VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
-                                                  res.sendStatus(500);
-                                              });
-                                          }
-                                      },
-                                      [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                          VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
-                                          res.sendStatus(500);
-                                      });
-
-                                  },
-                                  [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                      VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
-                                      res.sendStatus(500);
-                                  });
-                              },
-                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                  VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
-                                  res.sendStatus(500);
-                              });
-                          }
-                      });
-
-    staticServer.post("/login", [&mariaDbClient] APPLICATION(req, res) {
-                          req.body.push_back(0);
-                          std::cout << req.body.data() << std::endl;
-
-                          std::string sessionCookie = std::string(Utils::Gen_random(16));
-
-                          std::size_t password = std::hash<std::string>{}(Utils::GetFieldByName(req.body.data(), "password"));
-                          nlohmann::json* usersJson = new nlohmann::json;
-                          nlohmann::json* userIdJson = new nlohmann::json;
+                          bool* found = new bool;
+                          *found = false;
                           mariaDbClient.query(
-                          "SELECT * FROM users WHERE username = '" + Utils::GetFieldByName(req.body.data(), "username") + "'AND password='" + std::to_string(password) + "';",
-                          [&res, usersJson, userIdJson, sessionCookie, &mariaDbClient](const MYSQL_ROW row) -> void {
+                          "SELECT * FROM users WHERE username = '" + Utils::GetFieldByName(req.body.data(), "username") + "';",
+                          [found, &mariaDbClient, &res, &req, password](const MYSQL_ROW row) -> void {
                               if (row != nullptr) {
-                                  usersJson->push_back({{"user_id", row[0]}, {"username", row[1]}});
-                                  userIdJson->push_back(row[0]);
+                                  VLOG(0) << "Row Result 3: " << row[0];
+                                  *found = true;
                               } else {
-                                  if(!usersJson->is_null()){
-                                      std::string userId;
-                                      userId = userIdJson->at(0);
-                                      VLOG(0) << "UserId: " << userId;
-                                      delete userIdJson;
-                                        VLOG(0) << "UserId: deleted ";
+                                  VLOG(0) << "Row Result 3: ";
+                                  if(*found){
+                                      VLOG(0) << "Username already in use";
+                                      res.send("Username already in use");
+                                      delete found;
+                                  } else {
                                       mariaDbClient.exec(
-                                      "INSERT INTO `sessions`(`session_id`, `userid`) VALUES ('" + sessionCookie + "','" + userId + "')",
-                                      [&mariaDbClient, &res, sessionCookie](void) -> void {
+                                      "INSERT INTO `users`(`username`, `password`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "username") + "','" + std::to_string(password) + "');",
+                                      [&mariaDbClient, &res, &req](void) -> void {
                                           VLOG(0) << "********** OnQuery 1: ";
                                           mariaDbClient.affectedRows(
-                                          [&res, sessionCookie](my_ulonglong affectedRows) -> void {
+                                          [&res, &mariaDbClient, &req](my_ulonglong affectedRows) -> void {
                                               VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                                res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "60"}} );
-                                              res.sendStatus(200);
+                                              std::string sessionCookie = Utils::Gen_random(16);
+                                              std::string* userId = new std::string();
+                                              mariaDbClient.query(
+                                              "SELECT user_id FROM users WHERE username = '" + Utils::GetFieldByName(req.body.data(), "username") + "';",
+                                              [&res, &mariaDbClient, sessionCookie, userId](const MYSQL_ROW row) -> void {
+                                                  if (row != nullptr) {
+                                                      *userId= row[0];
+                                                      VLOG(0) << "Row Result 3: " << *userId;
+                                                  } else {
+                                                      VLOG(0) << "User ID: " << *userId;
+                                                      mariaDbClient.exec(
+                                                      "INSERT INTO `sessions`(`session_id`, `userid`) VALUES ('" + sessionCookie + "','" + *userId + "')",
+                                                      [&mariaDbClient, &res, sessionCookie, userId](void) -> void {
+                                                          VLOG(0) << "********** OnQuery 1: ";
+                                                          mariaDbClient.affectedRows(
+                                                          [&res, sessionCookie, userId](my_ulonglong affectedRows) -> void {
+                                                              VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                                              res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "360"}} );
+                                                              res.sendStatus(200);
+                                                              delete userId;
+                                                          },
+                                                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                                              VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                                              res.sendStatus(500);
+                                                          });
+                                                      },
+                                                      [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                                          VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                                                          res.sendStatus(500);
+                                                      });
+                                                  }
+                                              },
+                                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                                  VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                                                  res.sendStatus(500);
+                                              });
+
                                           },
                                           [&res](const std::string& errorString, unsigned int errorNumber) -> void {
                                               VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
@@ -162,12 +121,64 @@ int main(int argc, char *argv[]) {
                                           VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
                                           res.sendStatus(500);
                                       });
+                                      delete found;
+                                  }
+                              }
+                          },
+                          [](const std::string& errorString, unsigned int errorNumber) -> void {
+                              VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                          });
 
-                                      res.send(usersJson->dump());
+
+
+                      });
+
+    staticServer.post("/login", [&mariaDbClient] APPLICATION(req, res) {
+                          req.body.push_back(0);
+                          std::cout << req.body.data() << std::endl;
+
+                          std::string sessionCookie = std::string(Utils::Gen_random(16));
+                          std::size_t password = std::hash<std::string>{}(Utils::GetFieldByName(req.body.data(), "password"));
+                          nlohmann::json* usersJson = new nlohmann::json;
+                          std::string* userId = new std::string();
+                          mariaDbClient.query(
+                          "SELECT * FROM users WHERE username = '" + Utils::GetFieldByName(req.body.data(), "username") + "'AND password='" + std::to_string(password) + "';",
+                          [&res, usersJson, sessionCookie, &mariaDbClient, userId](const MYSQL_ROW row) -> void {
+                              if (row != nullptr) {
+                                  usersJson->push_back({{"user_id", row[0]}, {"username", row[1]}});
+                                  VLOG(0) << "UserId: " << usersJson->dump();
+                                  *userId = row[0];
+                                  VLOG(0) << "UserId: " << row[0];
+                              } else {
+                                  if(!usersJson->is_null()){
+                                      VLOG(0) << "UserId: " << *userId;
+                                      mariaDbClient.exec(
+                                      "INSERT INTO `sessions`(`session_id`, `userid`) VALUES ('" + sessionCookie + "','" + *userId + "')",
+                                      [&mariaDbClient, &res, sessionCookie, userId, usersJson](void) -> void {
+                                          VLOG(0) << "********** OnQuery 1: ";
+                                          mariaDbClient.affectedRows(
+                                          [&res, sessionCookie, userId, usersJson](my_ulonglong affectedRows) -> void {
+                                              VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                              res.cookie("sessionCookie", sessionCookie, {{"Max-Age", "60"}} );
+                                              res.send(usersJson->dump());
+                                              delete usersJson;
+                                              delete userId;
+
+                                          },
+                                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                              VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                              res.sendStatus(500);
+                                          });
+                                      },
+                                      [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                          VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                                          res.sendStatus(500);
+                                      });
                                   } else {
+                                      VLOG(0) << "No valid User found";
                                       res.send("No valid User found with this credentials!");
                                   }
-                                  delete usersJson;
+
                               }
                           },
                           [&res](const std::string& errorString, unsigned int errorNumber) -> void {
@@ -178,66 +189,87 @@ int main(int argc, char *argv[]) {
                       });
 
     staticServer.get("/subtopics", [&mariaDbClient] APPLICATION(req, res) {
-                        nlohmann::json* subTopicsJson = new nlohmann::json;
-                        mariaDbClient.query(
-                        "SELECT * FROM subtopics",
-                        [&res, subTopicsJson, &mariaDbClient](const MYSQL_ROW row) -> void {
-                            if (row != nullptr) {
-                                subTopicsJson->push_back({{"subtopic_id", row[0]},{"title", row[1]}, {"created_at", row[2]}, {"userid", row[3]}});
-                                VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
-                                res.send(subTopicsJson->dump());
-                            } else {
-                                VLOG(0) << "Row Result 3: " << subTopicsJson->dump();
-                                delete subTopicsJson;
-                            }
-                        },
-                        [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                            VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
-                            res.sendStatus(500);
-                        });
-                    });
+                         nlohmann::json* subTopicsJson = new nlohmann::json;
+                         mariaDbClient.query(
+                         "SELECT subtopics.subtopic_id, subtopics.title, subtopics.created_at, subtopics.userid, users.username FROM subtopics LEFT JOIN users ON subtopics.userid = users.user_id",
+                         [&res, subTopicsJson, &mariaDbClient](const MYSQL_ROW row) -> void {
+                             if (row != nullptr) {
+                                 VLOG(0) << "Username: " << row[4];
+                                 std::string subtopic_id = row[0];
+                                 std::string title = row[1];
+                                 std::string created_at = row[2];
+                                 std::string userId = row[3];
+
+                                 subTopicsJson->push_back({{"subtopic_id", subtopic_id},{"title", title}, {"created_at", created_at}, {"userid", userId}, {"username", row[4]}});
+
+                                 VLOG(0) << "userId: " << subTopicsJson->dump(4);
+
+                             } else {
+                                 res.send(subTopicsJson->dump(4));
+                                 delete subTopicsJson;
+                             }
+                         },
+                         [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                             VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                             res.sendStatus(500);
+                         });
+                     });
 
     staticServer.post("/subtopics/new", [&mariaDbClient] APPLICATION(req, res) {
                           std::string sessionCookie = req.cookie("sessionCookie");
 
                           if(sessionCookie.empty()){
-                              res.sendStatus(500);
+                              res.sendStatus(403);
                           } else {
-                              std::string userid = getUserIdFromSession(mariaDbClient, sessionCookie);
+                              std::string* userId = new std::string();
+                              mariaDbClient.query(
+                              "SELECT userid FROM sessions WHERE session_id = '" + sessionCookie + "';",
+                              [userId, &req, &res, &mariaDbClient](const MYSQL_ROW row) -> void {
+                                  if (row != nullptr) {
+                                      VLOG(0) << "Row Result 3: " << row[0];
+                                      *userId = row[0];
+                                  } else {
+                                      VLOG(0) << "Row Result 3: " << *userId;
+                                      std::cout << *userId << std::endl;
+                                      req.body.push_back(0);
+                                      std::cout << req.body.data() << std::endl;
+                                      std::cout << Utils::GetFieldByName(req.body.data(), "title") << std::endl;
 
-                              std::cout << userid << std::endl;
-                              req.body.push_back(0);
-                              std::cout << req.body.data() << std::endl;
-                              std::cout << Utils::GetFieldByName(req.body.data(), "title") << std::endl;
-
-                              mariaDbClient.exec(
-                              "INSERT INTO `subtopics`(`title`, `userid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','" + "1" + "')",
-                              [&mariaDbClient, &res](void) -> void {
-                                  VLOG(0) << "********** OnQuery 1: ";
-                                  mariaDbClient.affectedRows(
-                                  [&res](my_ulonglong affectedRows) -> void {
-                                      VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                      res.sendStatus(200);
-                                  },
-                                  [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                      VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
-                                      res.sendStatus(500);
-                                  });
+                                      mariaDbClient.exec(
+                                      "INSERT INTO `subtopics`(`title`, `userid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','" + *userId + "')",
+                                      [&mariaDbClient, &res, userId](void) -> void {
+                                          VLOG(0) << "********** OnQuery 1: ";
+                                          mariaDbClient.affectedRows(
+                                          [&res, userId](my_ulonglong affectedRows) -> void {
+                                              VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                              res.sendStatus(200);
+                                              delete userId;
+                                          },
+                                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                              VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                              res.sendStatus(500);
+                                          });
+                                      },
+                                      [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                          VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                                          res.sendStatus(500);
+                                      });
+                                  }
                               },
-                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                  VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
-                                  res.sendStatus(500);
+                              [](const std::string& errorString, unsigned int errorNumber) -> void {
+                                  VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                               });
+
                           }
                       });
 
     staticServer.get("/subtopic/:subtopicid/threads", [&mariaDbClient] APPLICATION(req, res) {
                          nlohmann::json* threadsJson = new nlohmann::json;
                          mariaDbClient.query(
-                         "SELECT * FROM threads WHERE subtopicid = '" + req.params["subtopicid"] + "';",
+                         "SELECT threads.thread_id, threads.title, threads.content, threads.created_at, threads.userid, threads.subtopicid, users.username FROM threads LEFT JOIN users ON threads.userid = users.user_id WHERE subtopicid = '" + req.params["subtopicid"] + "';",
                          [&res, threadsJson](const MYSQL_ROW row) -> void {
                              if (row != nullptr) {
-                                 threadsJson->push_back({{"thread_id", row[0]},{"title", row[1]}, {"content", row[2]}, {"created_at", row[3]}, {"userid", row[4]}, {"subtopicid", row[5]}});
+                                 threadsJson->push_back({{"thread_id", row[0]},{"title", row[1]}, {"content", row[2]}, {"created_at", row[3]}, {"userid", row[4]}, {"subtopicid", row[5]}, {"username", row[6]}});
                                  VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
                              } else {
                                  VLOG(0) << "Row Result 3: " << threadsJson->dump();
@@ -252,36 +284,57 @@ int main(int argc, char *argv[]) {
                      });
 
     staticServer.post("/subtopic/:subtopicid/threads/new", [&mariaDbClient] APPLICATION(req, res) {
-                          req.body.push_back(0);
-                          std::cout << req.body.data() << std::endl;
-                          mariaDbClient.exec(
-                          "INSERT INTO `threads`(`title`, `content`,`userid`, `subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','" + Utils::GetFieldByName(req.body.data(), "content") + "','1','" + req.params["subtopicid"] + "');",
-                          [&mariaDbClient, &res](void) -> void {
-                              VLOG(0) << "********** OnQuery 1: ";
-                              mariaDbClient.affectedRows(
-                              [&res](my_ulonglong affectedRows) -> void {
-                                  VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                  res.sendStatus(200);
+                          std::string sessionCookie = req.cookie("sessionCookie");
+                          if(sessionCookie.empty()){
+                              res.sendStatus(403);
+                          } else {
+                              std::string* userId = new std::string();
+                              mariaDbClient.query(
+                              "SELECT userid FROM sessions WHERE session_id = '" + sessionCookie + "';",
+                              [userId, &req, &res, &mariaDbClient](const MYSQL_ROW row) -> void {
+                                  if (row != nullptr) {
+                                      VLOG(0) << "Row Result 3: " << row[0];
+                                      *userId = row[0];
+                                  } else {
+                                      VLOG(0) << "Row Result 3: " << *userId;
+                                      std::cout << *userId << std::endl;
+                                      req.body.push_back(0);
+                                      std::cout << req.body.data() << std::endl;
+
+                                      mariaDbClient.exec(
+                                      "INSERT INTO `threads`(`title`, `content`,`userid`, `subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','" + Utils::GetFieldByName(req.body.data(), "content") + "','" + *userId + "','" + req.params["subtopicid"] + "');",
+                                      [&mariaDbClient, &res, userId](void) -> void {
+                                          VLOG(0) << "********** OnQuery 1: ";
+                                          mariaDbClient.affectedRows(
+                                          [&res, userId](my_ulonglong affectedRows) -> void {
+                                              VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                              res.sendStatus(200);
+                                              delete userId;
+                                          },
+                                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                              VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                              res.sendStatus(500);
+                                          });
+                                      },
+                                      [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                          VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                                          res.sendStatus(500);
+                                      });
+                                  }
                               },
-                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                  VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
-                                  res.sendStatus(500);
+                              [](const std::string& errorString, unsigned int errorNumber) -> void {
+                                  VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                               });
-                          },
-                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                              VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
-                              res.sendStatus(500);
-                          });
+                          }
                       });
 
     staticServer.get("/subtopic/:subtopicid/threads/:threadid/posts", [&mariaDbClient] APPLICATION(req, res) {
                          nlohmann::json* postsJson = new nlohmann::json;
                          mariaDbClient.query(
-                         "SELECT * FROM posts WHERE threadid = '" + req.params["threadid"] + "';",
+                         "SELECT posts.post_id, posts.content, posts.created_at, posts.userid, posts.threadid, users.username FROM posts LEFT JOIN users ON posts.userid=users.user_id WHERE threadid = '" + req.params["threadid"] + "';",
                          [&res, postsJson](const MYSQL_ROW row) -> void {
                              if (row != nullptr) {
-                                 postsJson->push_back({{"post_id", row[0]}, {"content", row[1]}, {"created_at", row[2]}, {"userid", row[3]}, {"threadid", row[4]}});
-                                 VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
+                                 postsJson->push_back({{"post_id", row[0]}, {"content", row[1]}, {"created_at", row[2]}, {"userid", row[3]}, {"threadid", row[4]}, {"username", row[5]}});
                              } else {
                                  VLOG(0) << "Row Result 3: " << postsJson->dump();
                                  res.send(postsJson->dump());
@@ -295,26 +348,49 @@ int main(int argc, char *argv[]) {
                      });
 
     staticServer.post("/subtopic/:subtopicid/threads/:threadid/posts/new", [&mariaDbClient] APPLICATION(req, res) {
-                          req.body.push_back(0);
-                          std::cout << req.body.data() << std::endl;
-                          mariaDbClient.exec(
-                          "INSERT INTO `posts`(`content`,`userid`,`subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "content") + "','1','" + req.params["threadid"] + "');",
-                          [&mariaDbClient, &res](void) -> void {
-                              VLOG(0) << "********** OnQuery 1: ";
-                              mariaDbClient.affectedRows(
-                              [&res](my_ulonglong affectedRows) -> void {
-                                  VLOG(0) << "********** AffectedRows 2: " << affectedRows;
-                                  res.sendStatus(200);
+                          std::string sessionCookie = req.cookie("sessionCookie");
+                          if(sessionCookie.empty()){
+                              res.sendStatus(403);
+                          } else {
+                              std::string* userId = new std::string();
+                              mariaDbClient.query(
+                              "SELECT userid FROM sessions WHERE session_id = '" + sessionCookie + "';",
+                              [userId, &req, &res, &mariaDbClient](const MYSQL_ROW row) -> void {
+                                  if (row != nullptr) {
+                                      VLOG(0) << "Row Result 3: " << row[0];
+                                      *userId = row[0];
+                                  } else {
+                                      VLOG(0) << "Row Result 3: " << *userId;
+                                      std::cout << *userId << std::endl;
+                                      req.body.push_back(0);
+                                      std::cout << req.body.data() << std::endl;
+
+                                      mariaDbClient.exec(
+                                      "INSERT INTO `posts`(`content`,`userid`,`subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "content") + "','" + *userId + "','" + req.params["threadid"] + "');",
+                                      [&mariaDbClient, &res, userId](void) -> void {
+                                          VLOG(0) << "********** OnQuery 1: ";
+                                          mariaDbClient.affectedRows(
+                                          [&res, userId](my_ulonglong affectedRows) -> void {
+                                              VLOG(0) << "********** AffectedRows 2: " << affectedRows;
+                                              res.sendStatus(200);
+                                              delete userId;
+                                          },
+                                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                              VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
+                                              res.sendStatus(500);
+                                          });
+                                      },
+                                      [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                                          VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
+                                          res.sendStatus(500);
+                                      });
+                                  }
                               },
-                              [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                                  VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
-                                  res.sendStatus(500);
+                              [](const std::string& errorString, unsigned int errorNumber) -> void {
+                                  VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                               });
-                          },
-                          [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                              VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
-                              res.sendStatus(500);
-                          });
+                          }
+
                       });
 
     staticServer.post("/logout", [&mariaDbClient] APPLICATION(req, res) {
@@ -353,82 +429,5 @@ int main(int argc, char *argv[]) {
     return express::WebApp::start();
 }
 
-std::string getUserIdFromSession(database::mariadb::MariaDBClient &mariaDbClient, std::string sessionID){
-    std::string* userId = new std::string();
-    nlohmann::json* userIdJson = new nlohmann::json;
-    mariaDbClient.query(
-                "SELECT userid FROM sessions WHERE session_id = '" + sessionID + "';",
-                [userId, userIdJson](const MYSQL_ROW row) -> void {
-        if (row != nullptr) {
-            VLOG(0) << "Row Result 3: " << row[0];
-            userIdJson->push_back(row[0]);
-        } else {
-            *userId = userIdJson->at(0);
-            VLOG(0) << "Row Result 3: " << *userId;
-            delete userIdJson;
-        }
-    },
-    [](const std::string& errorString, unsigned int errorNumber) -> void {
-        VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
-    });
 
-    std::string id = *userId;
-
-    delete userId;
-    return id;
-
-}
-
-
-bool checkUserName(database::mariadb::MariaDBClient &mariaDbClient, std::string username){
-    bool* found = new bool(false);
-    nlohmann::json* userIdJson = new nlohmann::json;
-    mariaDbClient.query(
-                "SELECT * FROM users WHERE username = '" + username + "';",
-                [userIdJson, &found](const MYSQL_ROW row) -> void {
-        if (row != nullptr) {
-            VLOG(0) << "Row Result 3: " << row[0];
-            userIdJson->push_back(row[0]);
-        } else {
-            VLOG(0) << "Row Result 3: ";
-            if(!userIdJson->is_null()){
-                *found=true;
-            }
-             delete userIdJson;
-        }
-    },
-    [](const std::string& errorString, unsigned int errorNumber) -> void {
-        VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
-    });
-    if(*found){
-        delete found;
-        return true;
-    } else {
-        delete found;
-        return false;
-    }
-}
-
-std::string getUsernameById(database::mariadb::MariaDBClient &mariaDbClient, std::string userId){
-    std::string* username = new std::string();
-    nlohmann::json* userNameJson = new nlohmann::json;
-    mariaDbClient.query(
-                "SELECT username FROM users WHERE user_id = '" + userId + "';",
-                [username, userNameJson](const MYSQL_ROW row) -> void {
-        if (row != nullptr) {
-            VLOG(0) << "Row Result 3: " << row[0];
-            userNameJson->push_back(row[0]);
-        } else {
-            VLOG(0) << "Row Result 3: ";
-            *username = userNameJson->at(0);
-             delete userNameJson;
-        }
-    },
-    [](const std::string& errorString, unsigned int errorNumber) -> void {
-        VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
-    });
-    std::string name = *username;
-    delete username;
-    return name;
-}
 

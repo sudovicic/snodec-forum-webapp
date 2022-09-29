@@ -13,6 +13,7 @@ std::string Utils::GetFieldByName(unsigned char *bodyData, std::string fieldName
      int index3 = bodyString.find('&', index);
 
      std::string result = bodyString.substr(index2, index3 - (index2));
+     std::replace(result.begin(), result.end(), '+', ' ');
      return result;
 
  }
