@@ -1,11 +1,11 @@
 window.middleware = {
     // TODO: redirect to /login for certain routes if no session exists?
-    checkAuth: (ctx, next) => {
+    checkAuth: async (ctx, next) => {
         ctx.data.session = $.cookie("sessionCookie") ? true : false;
         next();
     },
 
-    logout: (ctx, next) => {
+    logout: async (ctx, next) => {
         ctx.data.session = null;
         $.removeCookie("sessionCookie");
         next();
