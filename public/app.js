@@ -9,9 +9,10 @@ page('/thread/:id', middleware.loadPosts, route.showThread);
 page('/subtopic/:id/threads/new', route.newThread);
 page('/subtopics/new', route.newSubtopic);
 page('/login', route.login);
-page('/logout', middleware.logout, () => page.redirect('/home'));
+// page('/logout', middleware.logout, () => page.redirect('/home'));
+page('/logout', middleware.logout);
 page('/register', route.register);
 
-page('/*', middleware.checkAuth, render.loginStatus, render.content);
+page('/*', render.loginStatus, render.content);
 
 page.start();
