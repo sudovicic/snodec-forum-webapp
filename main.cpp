@@ -110,7 +110,6 @@ int main(int argc, char *argv[]) {
                                                   VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                                                   res.sendStatus(500);
                                               });
-
                                           },
                                           [&res](const std::string& errorString, unsigned int errorNumber) -> void {
                                               VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
@@ -163,7 +162,6 @@ int main(int argc, char *argv[]) {
                                               res.send(usersJson->dump());
                                               delete usersJson;
                                               delete userId;
-
                                           },
                                           [&res](const std::string& errorString, unsigned int errorNumber) -> void {
                                               VLOG(0) << "********** Error 2: " << errorString << " : " << errorNumber;
@@ -199,11 +197,8 @@ int main(int argc, char *argv[]) {
                                  std::string title = row[1];
                                  std::string created_at = row[2];
                                  std::string userId = row[3];
-
                                  subTopicsJson->push_back({{"subtopic_id", subtopic_id},{"title", title}, {"created_at", created_at}, {"userid", userId}, {"username", row[4]}});
-
                                  VLOG(0) << "userId: " << subTopicsJson->dump(4);
-
                              } else {
                                  res.send(subTopicsJson->dump(4));
                                  delete subTopicsJson;
@@ -217,7 +212,6 @@ int main(int argc, char *argv[]) {
 
     staticServer.post("/subtopics/new", [&mariaDbClient] APPLICATION(req, res) {
                           std::string sessionCookie = req.cookie("sessionCookie");
-
                           if(sessionCookie.empty()){
                               res.sendStatus(403);
                           } else {
@@ -259,7 +253,6 @@ int main(int argc, char *argv[]) {
                               [](const std::string& errorString, unsigned int errorNumber) -> void {
                                   VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                               });
-
                           }
                       });
 
@@ -364,7 +357,6 @@ int main(int argc, char *argv[]) {
                                       std::cout << *userId << std::endl;
                                       req.body.push_back(0);
                                       std::cout << req.body.data() << std::endl;
-
                                       mariaDbClient.exec(
                                       "INSERT INTO `posts`(`content`,`userid`,`threadid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "content") + "','" + *userId + "','" + req.params["threadid"] + "');",
                                       [&mariaDbClient, &res, userId](void) -> void {
