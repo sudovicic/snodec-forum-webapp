@@ -178,26 +178,24 @@ int main(int argc, char *argv[]) {
                       });
 
     staticServer.get("/subtopics", [&mariaDbClient] APPLICATION(req, res) {
-                         nlohmann::json* subTopicsJson = new nlohmann::json;
-                         mariaDbClient.query(
-                         "SELECT * FROM subtopics",
-                         [&res, subTopicsJson, &mariaDbClient](const MYSQL_ROW row) -> void {
-                             if (row != nullptr) {
-                                 subTopicsJson->push_back({{"subtopic_id", row[0]},{"title", row[1]}, {"created_at", row[2]}, {"userid", row[3]}});
-                                 VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
-
-                             } else {
-                                 VLOG(0) << "Row Result 3: " << subTopicsJson->dump();
-                                 res.send(subTopicsJson->dump());
-                                 delete subTopicsJson;
-                             }
-                         },
-                         [&res](const std::string& errorString, unsigned int errorNumber) -> void {
-                             VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
-                             res.sendStatus(500);
-                         });
-
-                     });
+                        nlohmann::json* subTopicsJson = new nlohmann::json;
+                        mariaDbClient.query(
+                        "SELECT * FROM subtopics",
+                        [&res, subTopicsJson, &mariaDbClient](const MYSQL_ROW row) -> void {
+                            if (row != nullptr) {
+                                subTopicsJson->push_back({{"subtopic_id", row[0]},{"title", row[1]}, {"created_at", row[2]}, {"userid", row[3]}});
+                                VLOG(0) << "Row Result 3: " << row[0] << " : " << row[1];
+                                res.send(subTopicsJson->dump());
+                            } else {
+                                VLOG(0) << "Row Result 3: " << subTopicsJson->dump();
+                                delete subTopicsJson;
+                            }
+                        },
+                        [&res](const std::string& errorString, unsigned int errorNumber) -> void {
+                            VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
+                            res.sendStatus(500);
+                        });
+                    });
 
     staticServer.post("/subtopics/new", [&mariaDbClient] APPLICATION(req, res) {
                           std::string sessionCookie = req.cookie("sessionCookie");
@@ -251,14 +249,13 @@ int main(int argc, char *argv[]) {
                              VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                              res.sendStatus(500);
                          });
-
                      });
 
     staticServer.post("/subtopic/:subtopicid/threads/new", [&mariaDbClient] APPLICATION(req, res) {
                           req.body.push_back(0);
                           std::cout << req.body.data() << std::endl;
                           mariaDbClient.exec(
-                          "INSERT INTO `threads`(`title`, `content`,`userid`, `subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','" + Utils::GetFieldByName(req.body.data(), "content") + "','1','" + req.params["subtopcid"] + "');",
+                          "INSERT INTO `threads`(`title`, `content`,`userid`, `subtopicid`) VALUES ('" + Utils::GetFieldByName(req.body.data(), "title") + "','" + Utils::GetFieldByName(req.body.data(), "content") + "','1','" + req.params["subtopicid"] + "');",
                           [&mariaDbClient, &res](void) -> void {
                               VLOG(0) << "********** OnQuery 1: ";
                               mariaDbClient.affectedRows(
@@ -275,7 +272,6 @@ int main(int argc, char *argv[]) {
                               VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
                               res.sendStatus(500);
                           });
-
                       });
 
     staticServer.get("/subtopic/:subtopicid/threads/:threadid/posts", [&mariaDbClient] APPLICATION(req, res) {
@@ -296,7 +292,6 @@ int main(int argc, char *argv[]) {
                              VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
                              res.sendStatus(500);
                          });
-
                      });
 
     staticServer.post("/subtopic/:subtopicid/threads/:threadid/posts/new", [&mariaDbClient] APPLICATION(req, res) {
@@ -320,7 +315,6 @@ int main(int argc, char *argv[]) {
                               VLOG(0) << "********** Error 1: " << errorString << " : " << errorNumber;
                               res.sendStatus(500);
                           });
-
                       });
 
     staticServer.post("/logout", [&mariaDbClient] APPLICATION(req, res) {
