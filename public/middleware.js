@@ -28,12 +28,21 @@ window.middleware = {
 
     loadThreads: async (ctx, next) => {
         if (!ctx.state.threads) {
-            const result = await window.apiService.getAllThreadsOfSubtopic(ctx.params.id);
+            const result = await window.apiService.getAllThreadsOfSubtopic(ctx.params.subtopicId);
             const threads = JSON.parse(result);
             ctx.state.threads = threads;
             ctx.data.threads = threads;
-            ctx.state.subtopicId = ctx.params.id;
-            ctx.data.subtopicId = ctx.params.id;
+            ctx.state.subtopicId = ctx.params.subtopicId;
+            ctx.data.subtopicId = ctx.params.subtopicId;
+
+            if (ctx.params.threadId) {
+                const thread = threads.find((t) => t.thread_id === ctx.params.threadId);
+                if (thread) {
+                    ctx.state.thread = thread;
+                    ctx.data.thread = thread;
+                } 
+            }
+
             ctx.save();
         } else {
             ctx.data.threads = ctx.state.threads;
@@ -44,12 +53,18 @@ window.middleware = {
 
     loadPosts: async (ctx, next) => {
         if (!ctx.state.posts) {
-            const { posts } = await window.apiService.getAllPostsOfThread(ctx.params.id);
+            const { posts } = await window.apiService.getAllPostsOfThread(ctx.params.subtopicId, ctx.params.threadId);
             ctx.state.posts = posts;
             ctx.data.posts = posts;
+            ctx.state.subtopicId = ctx.params.subtopicId;
+            ctx.data.subtopicId = ctx.params.subtopicId;
+            ctx.state.threadId = ctx.params.threadId;
+            ctx.data.threadId = ctx.params.threadId;
             ctx.save();
         } else {
             ctx.data.posts = ctx.state.posts;
+            ctx.data.subtopicId = ctx.state.subtopicId;
+            ctx.data.threadId = ctx.state.threadId;
         }
         next();
     },

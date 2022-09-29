@@ -73,6 +73,14 @@
       });
     },
 
+    newPost: (ctx, next) => {
+      get('/views/newPostForm.html', (html) => {
+        ctx.data.index = 0;
+        ctx.partials.content = html;
+        next();
+      });
+    },
+
     login: (ctx, next) => {
       get('/views/loginForm.html', (html) => {
         ctx.data.index = 2;

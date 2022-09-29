@@ -4,13 +4,15 @@ page.configure({window: window});
 page('/*', init.ctx, middleware.checkAuth);
 
 page('/home', middleware.loadSubtopics, route.home);
-page('/subtopic/:id', middleware.loadThreads, route.showSubtopic);
-page('/thread/:id', middleware.loadPosts, route.showThread);
-page('/subtopic/:id/threads/new', route.newThread);
+page('/subtopic/:subtopicId', middleware.loadThreads, route.showSubtopic);
 page('/subtopics/new', route.newSubtopic);
+page('/subtopic/:subtopicId/thread/:threadId', middleware.loadThreads, middleware.loadPosts, route.showThread);
+page('/subtopic/:id/threads/new', route.newThread);
+// TODO implement
+page('/subtopic/:subtopicId/threads/:threadId/posts/new', route.newPost);
+
 page('/login', route.login);
-// page('/logout', middleware.logout, () => page.redirect('/home'));
-page('/logout', middleware.logout);
+page('/logout', middleware.logout, () => page.redirect('/home'));
 page('/register', route.register);
 
 page('/*', render.loginStatus, render.content);
