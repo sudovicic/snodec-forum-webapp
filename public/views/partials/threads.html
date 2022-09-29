@@ -1,1 +1,10 @@
-<!-- TODO -->
+<h3>threads</h3>
+<ul>
+    {{#threads}}
+        <li class="thread-item">
+            <p>
+                <a href="/thread/{{thread_id}}">{{title}}</a> - {{created_at}}
+            </p>
+        </li>
+    {{/threads}}
+</ul>

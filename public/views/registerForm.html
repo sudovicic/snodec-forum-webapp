@@ -1,4 +1,11 @@
-<form method="post">  
+<script>
+    $('#registerForm').ajaxForm(function() {
+        // on success redirect
+        page.redirect('/home');
+    });
+</script>
+
+<form id="registerForm" method="post">  
     <label for="username"><b>username</b></label>
     <input type="text" placeholder="choose username" name="username" required>
 

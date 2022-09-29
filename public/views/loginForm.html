@@ -1,9 +1,16 @@
-<form method="post">  
-      <label for="username"><b>username</b></label>
-      <input type="text" placeholder="enter username" name="username" required>
-  
-      <label for="password"><b>password</b></label>
-      <input type="password" placeholder="enter password" name="password" required>
-  
-      <button type="submit">login</button>
-  </form>
+<script>
+    $('#loginForm').ajaxForm(function() {
+        // on success redirect
+        page.redirect('/home');
+    });
+</script>
+
+<form id="loginForm" method="post">  
+    <label for="username"><b>username</b></label>
+    <input type="text" placeholder="enter username" name="username" required>
+
+    <label for="password"><b>password</b></label>
+    <input type="password" placeholder="enter password" name="password" required>
+
+    <button type="submit">login</button>
+</form>

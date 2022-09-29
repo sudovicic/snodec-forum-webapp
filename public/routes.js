@@ -37,9 +37,37 @@
       });
     },
 
+    showSubtopic: (ctx, next) => {
+      get('/views/subtopic.html', (html) => {
+        ctx.data.index = 0;
+        get('/views/partials/threads.html', (threadsPartial) => {
+          ctx.partials.content = html + Hogan.compile(threadsPartial).render(ctx.data, ctx.partials);
+          next();
+        })
+      });
+    },
+
+    showThread: (ctx, next) => {
+      get('/views/thread.html', (html) => {
+        ctx.data.index = 0;
+        get('/views/partials/posts.html', (postsPartial) => {
+          ctx.partials.content = html + Hogan.compile(postsPartial).render(ctx.data, ctx.partials);
+          next();
+        })
+      });
+    },
+
     newSubtopic: (ctx, next) => {
       get('/views/newSubtopicForm.html', (html) => {
         ctx.data.index = 1;
+        ctx.partials.content = html;
+        next();
+      });
+    },
+
+    newThread: (ctx, next) => {
+      get('/views/newThreadForm.html', (html) => {
+        ctx.data.index = 0;
         ctx.partials.content = html;
         next();
       });
@@ -63,15 +91,22 @@
   };
 
   window.render = {
+    loginStatus: (ctx, next) => {
+      get('views/partials/loginStatus.html', (html) => {
+        const content = Hogan.compile(html).render(ctx.data, ctx.partials);
+        $('#loginStatus').empty().append(content);
+        next();
+      });
+    },
+    
     content: (ctx, next) => {
       get('views/partials/content.html', (html) => {
         const content = Hogan.compile(html).render(ctx.data, ctx.partials);
-
         $('#content').empty().append(content);
         changeActive(ctx.data.index);
         if (typeof done === 'function') done(ctx.data.index);
       });
-    }
+    },
   };
 
   window.done = null;
