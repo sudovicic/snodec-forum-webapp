@@ -17,17 +17,19 @@ std::string Utils::GetFieldByName(unsigned char *bodyData, std::string fieldName
 
  }
 
-std::string Utils::Gen_random(const int len) {
-    static const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-    std::string tmp_s;
-    tmp_s.reserve(len);
+std::string Utils::Gen_random(std::size_t length) {
+    const std::string CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-    for (int i = 0; i < len; ++i) {
-        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-    }
+       std::random_device random_device;
+       std::mt19937 generator(random_device());
+       std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
 
-    return tmp_s;
+       std::string random_string;
+
+       for (std::size_t i = 0; i < length; ++i)
+       {
+           random_string += CHARACTERS[distribution(generator)];
+       }
+
+       return random_string;
 }
