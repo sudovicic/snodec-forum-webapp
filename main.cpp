@@ -354,17 +354,17 @@ int main(int argc, char *argv[]) {
 }
 
 std::string getUserIdFromSession(database::mariadb::MariaDBClient &mariaDbClient, std::string sessionID){
-    std::string userId;
+    std::string* userId = new std::string();
     nlohmann::json* userIdJson = new nlohmann::json;
     mariaDbClient.query(
                 "SELECT userid FROM sessions WHERE session_id = '" + sessionID + "';",
-                [&userId, userIdJson](const MYSQL_ROW row) -> void {
+                [userId, userIdJson](const MYSQL_ROW row) -> void {
         if (row != nullptr) {
             VLOG(0) << "Row Result 3: " << row[0];
             userIdJson->push_back(row[0]);
         } else {
-            userId = userIdJson->at(0);
-            VLOG(0) << "Row Result 3: " << userId;
+            *userId = userIdJson->at(0);
+            VLOG(0) << "Row Result 3: " << *userId;
             delete userIdJson;
         }
     },
@@ -372,13 +372,16 @@ std::string getUserIdFromSession(database::mariadb::MariaDBClient &mariaDbClient
         VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
     });
 
-    return userId;
+    std::string id = *userId;
+
+    delete userId;
+    return id;
 
 }
 
 
 bool checkUserName(database::mariadb::MariaDBClient &mariaDbClient, std::string username){
-    bool found = false;
+    bool* found = new bool(false);
     nlohmann::json* userIdJson = new nlohmann::json;
     mariaDbClient.query(
                 "SELECT * FROM users WHERE username = '" + username + "';",
@@ -389,7 +392,7 @@ bool checkUserName(database::mariadb::MariaDBClient &mariaDbClient, std::string 
         } else {
             VLOG(0) << "Row Result 3: ";
             if(!userIdJson->is_null()){
-                found=true;
+                *found=true;
             }
              delete userIdJson;
         }
@@ -397,27 +400,35 @@ bool checkUserName(database::mariadb::MariaDBClient &mariaDbClient, std::string 
     [](const std::string& errorString, unsigned int errorNumber) -> void {
         VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
     });
-    return found;
+    if(*found){
+        delete found;
+        return true;
+    } else {
+        delete found;
+        return false;
+    }
 }
 
 std::string getUsernameById(database::mariadb::MariaDBClient &mariaDbClient, std::string userId){
-    std::string username;
+    std::string* username = new std::string();
     nlohmann::json* userNameJson = new nlohmann::json;
     mariaDbClient.query(
                 "SELECT username FROM users WHERE user_id = '" + userId + "';",
-                [&username, userNameJson](const MYSQL_ROW row) -> void {
+                [username, userNameJson](const MYSQL_ROW row) -> void {
         if (row != nullptr) {
             VLOG(0) << "Row Result 3: " << row[0];
             userNameJson->push_back(row[0]);
         } else {
             VLOG(0) << "Row Result 3: ";
-            username = userNameJson->at(0);
+            *username = userNameJson->at(0);
              delete userNameJson;
         }
     },
     [](const std::string& errorString, unsigned int errorNumber) -> void {
         VLOG(0) << "Error 3: " << errorString << " : " << errorNumber;
     });
-    return username;
+    std::string name = *username;
+    delete username;
+    return name;
 }
 
