@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
                                   if(*found){
                                       VLOG(0) << "Username already in use";
                                       res.sendStatus(401);
-                                      res.send("Username already in use");
                                       delete found;
                                   } else {
                                       mariaDbClient.exec(
@@ -176,7 +175,6 @@ int main(int argc, char *argv[]) {
                                   } else {
                                       VLOG(0) << "No valid User found";
                                       res.sendStatus(401);
-                                      res.send("No valid User found with this credentials!");
                                   }
 
                               }

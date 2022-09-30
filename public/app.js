@@ -14,6 +14,8 @@ page('/login', route.login);
 page('/logout', middleware.logout, () => page.redirect('/home'));
 page('/register', route.register);
 
+page('/genericError', route.genericError);
+
 page('/*', render.header, init.navLinks, render.content);
 
 page.start();

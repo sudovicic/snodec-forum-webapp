@@ -1,6 +1,11 @@
 <script>
-    $('#registerForm').ajaxForm(() => {
-        page.redirect('/home');
+    $('#registerForm').ajaxForm({
+        success: () => {
+            page.redirect('/home');
+        },
+        error: () => {
+            page.redirect('/genericError');
+        }
     });
 </script>
 

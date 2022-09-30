@@ -112,6 +112,14 @@
         next();
       });
     },
+
+    genericError: (ctx, next) => {
+      get('/views/genericError.html', (html) => {
+        ctx.data.activeNavLinkId = '#home';
+        ctx.partials.content = html;
+        next();
+      });
+    },
   };
 
   window.render = {
@@ -140,7 +148,6 @@
         $('#content').empty().append(content);
         changeActive(ctx.data.activeNavLinkId);
         if (typeof done === 'function') {
-          console.log(done);
           done(ctx.data.activeNavLinkId);
         }
       });
