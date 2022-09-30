@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
                                   VLOG(0) << "Row Result 3: ";
                                   if(*found){
                                       VLOG(0) << "Username already in use";
+                                      res.sendStatus(401);
                                       res.send("Username already in use");
                                       delete found;
                                   } else {
@@ -174,6 +175,7 @@ int main(int argc, char *argv[]) {
                                       });
                                   } else {
                                       VLOG(0) << "No valid User found";
+                                      res.sendStatus(401);
                                       res.send("No valid User found with this credentials!");
                                   }
 
