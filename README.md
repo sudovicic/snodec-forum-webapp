@@ -6,15 +6,15 @@ Simple forums application using [`SNode.C`](https://github.com/VolkerChristian/s
 
 ### TODOs
 
-- [ ] build a real REST API provided by a webserver running SNode.C
-- [ ] consume that API in the frontend
+- [x] build a real REST API provided by a webserver running SNode.C
+- [x] consume that API in the frontend
 - [ ] setup webserver to use index.html as an entrypoint for all non-existent requested URLs
     this is needed so that fresh requests (not triggered by `page.js`) to e.g. http://localhost:1337/subtopic/:subtopicId don't fail.
     see: https://github.com/visionmedia/page.js/#server-configuration
 
 ### Mandatory Functionality
 
-- [ ] Users should be able to register using username and password.
-- [ ] Users should be able to create subtopics.
-- [ ] Users should be able to create threads in subtopics.
-- [ ] Users should be able to create posts in threads.
+- [x] Users should be able to register using username and password.
+- [x] Users should be able to create subtopics.
+- [x] Users should be able to create threads in subtopics.
+- [x] Users should be able to create posts in threads.
