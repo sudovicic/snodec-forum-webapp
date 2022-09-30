@@ -2,7 +2,8 @@
 <ul>
     {{#posts}}
         <li class="post-item">
-            <p>{{content}}</p>
+            <p>{{username}}: {{content}}</p>
+            <small>{{created_at}}</small>
         </li>
     {{/posts}}
 </ul>

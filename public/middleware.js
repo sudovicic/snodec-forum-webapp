@@ -15,8 +15,7 @@ window.middleware = {
     loadSubtopics: async (ctx, next) => {
         if (!ctx.state.subtopics) {
             // cache miss
-            const result = await window.apiService.getAllSubtopics();
-            const subtopics = JSON.parse(result);
+            const subtopics = JSON.parse(await window.apiService.getAllSubtopics());
             ctx.state.subtopics = subtopics;
             ctx.data.subtopics = subtopics;
             ctx.save();
@@ -29,8 +28,7 @@ window.middleware = {
 
     loadThreads: async (ctx, next) => {
         if (!ctx.state.threads) {
-            const result = await window.apiService.getAllThreadsOfSubtopic(ctx.params.subtopicId);
-            const threads = JSON.parse(result);
+            const threads = JSON.parse(await window.apiService.getAllThreadsOfSubtopic(ctx.params.subtopicId));
             ctx.state.threads = threads;
             ctx.data.threads = threads;
             ctx.state.subtopicId = ctx.params.subtopicId;
@@ -55,7 +53,7 @@ window.middleware = {
 
     loadPosts: async (ctx, next) => {
         if (!ctx.state.posts) {
-            const posts = await window.apiService.getAllPostsOfThread(ctx.params.subtopicId, ctx.params.threadId);
+            const posts = JSON.parse(await window.apiService.getAllPostsOfThread(ctx.params.subtopicId, ctx.params.threadId));
             ctx.state.posts = posts;
             ctx.data.posts = posts;
             ctx.state.subtopicId = ctx.params.subtopicId;
@@ -64,6 +62,7 @@ window.middleware = {
             ctx.data.threadId = ctx.params.threadId;
             ctx.save();
         } else {
+            console.log('else');
             ctx.data.posts = ctx.state.posts;
             ctx.data.subtopicId = ctx.state.subtopicId;
             ctx.data.threadId = ctx.state.threadId;
