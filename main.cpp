@@ -20,7 +20,6 @@ int main(int argc, char *argv[]) {
     database::mariadb::MariaDBClient mariaDbClient = DBSetup::InitDB();
 
     express::legacy::in::WebApp staticServer("ForumApp");
-    std::hash<std::string> hasher;
 
     staticServer.get("/users", [&mariaDbClient] APPLICATION(req, res) {
                          std::cout << "Cookie-Value of \"SessionCookie\": "<< req.cookie("sessionCookie")<<std::endl;
@@ -407,6 +406,18 @@ int main(int argc, char *argv[]) {
                               });
                           }
                       });
+
+    staticServer.get("/register", [] APPLICATION(req, res) {
+                         res.redirect(308, "/index.html");
+                     });
+
+    staticServer.get("/login", [] APPLICATION(req, res) {
+                         res.redirect(308, "/index.html");
+                     });
+
+    staticServer.get("/home", [] APPLICATION(req, res) {
+                         res.redirect(308, "/index.html");
+                     });
 
 
     staticServer.use(express::middleware::StaticMiddleware(SERVERROOT));
