@@ -4,10 +4,8 @@
   window.apiService = {
     logout: async () => {
       return await $.ajax({
-        url: `${API_URL}/logout`,
-        xhrFields: {
-          withCredentials: true
-        }
+        method: 'POST',
+        url: `${API_URL}/logout`
       });
     },
 

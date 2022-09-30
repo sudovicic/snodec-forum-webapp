@@ -391,11 +391,12 @@ int main(int argc, char *argv[]) {
                               res.sendStatus(500);
                           } else {
                               mariaDbClient.exec(           "DELETE FROM `sessions` WHERE session_id ='" + sessionCookie + "';",
-                              [&mariaDbClient](void) -> void {
+                              [&mariaDbClient, &res](void) -> void {
                                   VLOG(0) << "********** OnQuery 0;";
                                   mariaDbClient.affectedRows(
-                                  [](my_ulonglong affectedRows) -> void {
+                                  [&res](my_ulonglong affectedRows) -> void {
                                       VLOG(0) << "********** AffectedRows 1: " << affectedRows;
+                                      res.sendStatus(200);
                                   },
                                   [](const std::string& errorString, unsigned int errorNumber) -> void {
                                       VLOG(0) << "Error 1: " << errorString << " : " << errorNumber;
